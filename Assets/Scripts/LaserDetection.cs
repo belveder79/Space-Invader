@@ -17,47 +17,84 @@ namespace OpenCvSharp.Demo
         private ARCameraBackground arCameraBackground;
         ARCameraManager arCameraManager;
 
+        bool is_sane = false;
+
         [SerializeField] private RenderTexture renderTexture;
         private Texture2D tex;
 
         public LaserDetection(ARCameraBackground aRCameraBackground, RenderTexture renderTexture)
         {
+            Debug.Log("------ LASERDETECTION CONSTRUCTOR ------");
             this.arCameraBackground = aRCameraBackground;
             this.renderTexture = renderTexture;
             renderTexture = new RenderTexture(1440, 2960, 24, RenderTextureFormat.ARGB32);
-
+            arCameraManager = cam.GetComponent<ARCameraManager>();
+            if (arCameraManager == null)
+                Debug.Log("------ LASERDETECTION ARCAMERAMANAGER IS STILL NULL! ------");
             RenderTexture.active = renderTexture;
         }
 
         void Awake()
         {
-            //getTexture2();
-            getTexture();
-            print(tex.GetPixel(0, 0));
-            print(tex.GetPixel(100, 100));
+            Debug.Log("------ LASERDETECTION AWAKE ------");
+            try
+            {
+                if (cam == null)
+                {
+                    //Debug.Log("------ LASERDETECTION CAMERA IS NULL! ------");
+                    cam = transform.parent.gameObject.GetComponent<Camera>();
+                    if (cam == null)
+                    {
+                        // Debug.LogError("------ LASERDETECTION CAMERA IS STILL NULL! ------");
+                        throw new Exception("Camera is not set!");
+                    }
+                }
+                renderTexture = new RenderTexture(1440, 2960, 24, RenderTextureFormat.ARGB32);
+                arCameraManager = cam.GetComponent<ARCameraManager>();
+                if (arCameraManager == null)
+                    throw new Exception("ARCameraManager is not set!");
+                // Debug.LogError("------ LASERDETECTION ARCAMERAMANAGER IS STILL NULL! ------");
+
+                Debug.Log("------ LASERDETECTION READY ------");
+
+                is_sane = true;
+                // getTexture2();
+                // // getTexture();
+                // print(tex.GetPixel(0, 0));
+                // print(tex.GetPixel(100, 100));
+            }
+            catch(Exception e)
+            {
+                Debug.Log("------ LASERDETECTION EXCEPTION: " + e.Message);
+            }
         }
 
         // Update is called once per frame
         void Update()
         {
-            //getTexture2();
-            getTexture();
-            laserDetection();
-            Ray ray = new Ray(cam.transform.position, new Vector3(maxLoc.X, maxLoc.Y));
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit))
+            if (is_sane)
             {
-                int objLayer = hit.collider.gameObject.layer;
-                if (objLayer == 7) // Interactables
+                // Debug.Log("------ LASERDETECTION UPDATE ------");
+                getTexture2();
+                //getTexture();
+                laserDetection();
+                Ray ray = new Ray(cam.transform.position, new Vector3(maxLoc.X, maxLoc.Y));
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit))
                 {
-                    hit.collider.GetComponent<Interactable>().BaseInteract();
+                    int objLayer = hit.collider.gameObject.layer;
+                    if (objLayer == 7) // Interactables
+                    {
+                        hit.collider.GetComponent<Interactable>().BaseInteract();
+                    }
                 }
             }
         }
 
         private void laserDetection()
         {
+            // Debug.Log("------ LASERDETECTION RUN ------");
             Mat src = Cv2.ImDecode(tex.EncodeToJPG(), ImreadModes.Color);
             Mat hsv = new Mat();
             //Cv2.CvtColor(src, hsv, ColorConversionCodes.RGBA2BGR);
@@ -99,8 +136,12 @@ namespace OpenCvSharp.Demo
 
         private void getTexture2()
         {
+            //Debug.Log("------ LASERDETECTION GETTEXTURE2 ------");
+
             if (!arCameraManager.TryAcquireLatestCpuImage(out UnityEngine.XR.ARSubsystems.XRCpuImage image))
                 return;
+
+            //Debug.Log("------ LASERDETECTION TRYAQUIRE WORKED ------");
 
             var conversionParams = new UnityEngine.XR.ARSubsystems.XRCpuImage.ConversionParams
             {
@@ -145,6 +186,8 @@ namespace OpenCvSharp.Demo
 
             tex.LoadRawTextureData(buffer);
             tex.Apply();
+
+            //Debug.Log("------ LASERDETECTION DISPOSE ------");
 
             // Done with your temporary data, so you can dispose it.
             buffer.Dispose();
