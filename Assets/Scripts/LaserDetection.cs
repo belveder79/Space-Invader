@@ -6,14 +6,17 @@ namespace OpenCvSharp.Demo
     using UnityEngine.XR.ARFoundation;
     using global::Unity.Collections;
     using global::Unity.Collections.LowLevel.Unsafe;
-
+    using System.Collections.Generic;
 
     public class LaserDetection : MonoBehaviour
     {
         [SerializeField] private Camera cam;
+        [SerializeField]
+        ARRaycastManager m_RaycastManager;
 
         Point maxLoc;
 
+        private int cnt = 0;
         private ARCameraBackground arCameraBackground;
         ARCameraManager arCameraManager;
 
@@ -77,27 +80,47 @@ namespace OpenCvSharp.Demo
                 // Debug.Log("------ LASERDETECTION UPDATE ------");
                 getTexture2();
                 //getTexture();
-                laserDetection();
-                Ray ray = new Ray(cam.transform.position, new Vector3(maxLoc.X, maxLoc.Y));
-                RaycastHit hit;
+                // laserDetection();
+                // Ray ray = new Ray(cam.transform.position, new Vector3(maxLoc.X, maxLoc.Y));
+                // RaycastHit hit;
+                // 
+                // if (Physics.Raycast(ray, out hit))
+                // {
+                //     int objLayer = hit.collider.gameObject.layer;
+                //     if (objLayer == 7) // Interactables
+                //     {
+                //         hit.collider.GetComponent<Interactable>().BaseInteract();
+                //     }
+                // }
+            }
+        }
 
-                if (Physics.Raycast(ray, out hit))
-                {
-                    int objLayer = hit.collider.gameObject.layer;
-                    if (objLayer == 7) // Interactables
-                    {
-                        hit.collider.GetComponent<Interactable>().BaseInteract();
-                    }
-                }
+        public void RayCastIt()
+        {
+            if (Input.touchCount == 0)
+                return;
+
+            List<ARRaycastHit> m_Hits = new List<ARRaycastHit>();
+            Debug.Log("RAYCAST TESTING");
+            if (m_RaycastManager.Raycast(Input.GetTouch(0).position, m_Hits))
+            {
+                // Only returns true if there is at least one hit
+                Debug.Log("RAYCAST HIT");
             }
         }
 
         private void laserDetection()
         {
+            byte[] jpgbytes = tex.EncodeToJPG();
+            //Debug.Log("DATA PATH: " + Application.persistentDataPath);
+            //string filePath = Application.persistentDataPath + "/image_" + cnt++  + ".jpg";
+            //if (!System.IO.File.Exists(filePath))
+            //    System.IO.File.WriteAllBytes(filePath, jpgbytes);
+
             // Debug.Log("------ LASERDETECTION RUN ------");
-            Mat src = Cv2.ImDecode(tex.EncodeToJPG(), ImreadModes.Color);
+            Mat src = Cv2.ImDecode(jpgbytes, ImreadModes.Color);
             Mat hsv = new Mat();
-            //Cv2.CvtColor(src, hsv, ColorConversionCodes.RGBA2BGR);
+            Cv2.CvtColor(src, hsv, ColorConversionCodes.RGBA2BGR);
             Cv2.CvtColor(hsv, hsv, ColorConversionCodes.BGR2HSV);
 
             print(tex.GetPixel(0, 0));
@@ -149,7 +172,7 @@ namespace OpenCvSharp.Demo
                 inputRect = new RectInt(0, 0, image.width, image.height),
 
                 // Downsample by 2.
-                outputDimensions = new Vector2Int(image.width / 2, image.height / 2),
+                outputDimensions = new Vector2Int(image.width, image.height),
 
                 // Choose RGBA format.
                 outputFormat = TextureFormat.RGBA32,
