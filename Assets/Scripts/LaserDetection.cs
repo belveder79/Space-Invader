@@ -107,6 +107,13 @@ namespace OpenCvSharp.Demo
                 // Only returns true if there is at least one hit
                 Debug.Log("RAYCAST HIT");
             }
+
+            var ray = cam.ScreenPointToRay(Input.GetTouch(0).position);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, 10))
+            {
+                Debug.Log("RAYCAST HIT 2");
+            }
         }
 
         private void laserDetection()
